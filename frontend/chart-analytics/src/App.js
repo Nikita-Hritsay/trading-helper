@@ -1,62 +1,92 @@
-// src/App.js
-import React, { useEffect, useState } from 'react';
-import { getItems, getCryptocurrency, createItem } from './components/api/DataReciever';
+import React, { useState } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  TimeScale,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import 'chartjs-adapter-date-fns';
+import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial';
+import { Chart } from 'react-chartjs-2';
+import { getCryptocurrency } from './components/api/DataReciever';
+
+// Register required Chart.js components
+ChartJS.register(CategoryScale, LinearScale, TimeScale, Tooltip, Legend, CandlestickController, CandlestickElement);
 
 const App = () => {
-  const [items, setItems] = useState([]);
-  const [crypto, setCrypto] = useState(null);
-
-  useEffect(() => {
-    // Fetch items when the component mounts
-    const fetchItems = async () => {
-      try {
-        const data = await getItems();
-        setItems(data);
-      } catch (error) {
-        console.error('Error fetching items:', error);
-      }
-    };
-
-    fetchItems();
-  }, []);
+  const [cryptoData, setCryptoData] = useState([]);
 
   const fetchCrypto = async () => {
     try {
-      const data = await getCryptocurrency("BTC", 'example-query');
-      setCrypto(data);
+      const response = await getCryptocurrency("BTC");
+
+      // Assuming response.data matches the provided format
+      const timeSeries = response.data;
+
+      // Convert data into the format required by the candlestick chart
+      const chartData = Object.entries(timeSeries).map(([date, values]) => ({
+        x: new Date(date), // Date for the x-axis
+        o: parseFloat(values.open),  // Open price
+        h: parseFloat(values.high),  // High price
+        l: parseFloat(values.low),   // Low price
+        c: parseFloat(values.close), // Close price
+      }));
+
+      setCryptoData(chartData);
     } catch (error) {
-      console.error('Error fetching cryptocurrency:', error);
+      console.error("Error fetching cryptocurrency data:", error);
     }
   };
 
-  const addItem = async () => {
-    try {
-      const newItem = { name: 'New Item', value: 42 }; // Example data
-      const createdItem = await createItem(newItem);
-      setItems((prev) => [...prev, createdItem]);
-    } catch (error) {
-      console.error('Error creating item:', error);
-    }
+  const data = {
+    datasets: [
+      {
+        label: 'BTC/USD',
+        data: cryptoData,
+        type: 'candlestick',
+        borderColor: 'rgba(0, 0, 255, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: (tooltipItem) => {
+            const { o, h, l, c } = cryptoData[tooltipItem.dataIndex];
+            return `Open: ${o}, High: ${h}, Low: ${l}, Close: ${c}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'day',
+        },
+      },
+      y: {
+        beginAtZero: false,
+      },
+    },
   };
 
   return (
     <div>
-      <h1>API Example</h1>
+      <h1>Cryptocurrency Chart</h1>
       <button onClick={fetchCrypto}>Fetch Cryptocurrency</button>
-      <button onClick={addItem}>Add Item</button>
 
-      <h2>Items:</h2>
-      <ul>
-        {items.map((item, index) => (
-          <li key={index}>{JSON.stringify(item)}</li>
-        ))}
-      </ul>
-
-      {crypto && (
-        <div>
-          <h2>Cryptocurrency:</h2>
-          <pre>{JSON.stringify(crypto, null, 2)}</pre>
-        </div>
+      {cryptoData.length > 0 ? (
+        <Chart type="candlestick" data={data} options={options} />
+      ) : (
+        <p>No data available. Click the button to fetch data.</p>
       )}
     </div>
   );

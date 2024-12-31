@@ -18,9 +18,9 @@ export const getItems = async () => {
   }
 };
 
-export const getCryptocurrency = async (id, query) => {
+export const getCryptocurrency = async (symbol, query) => {
   try {
-    const response = await api.get(`/cryptocurrencies/${id}`, { params: { q: query } });
+    const response = await api.get(`/cryptocurrencies/${symbol}`, { params: { q: query } });
     return response.data;
   } catch (error) {
     console.error('Error fetching cryptocurrency:', error);
