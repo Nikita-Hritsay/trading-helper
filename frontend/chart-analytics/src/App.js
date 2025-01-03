@@ -12,7 +12,6 @@ import { CandlestickController, CandlestickElement } from 'chartjs-chart-financi
 import { Chart } from 'react-chartjs-2';
 import { getCryptocurrency } from './components/api/DataReciever';
 
-// Register required Chart.js components
 ChartJS.register(CategoryScale, LinearScale, TimeScale, Tooltip, Legend, CandlestickController, CandlestickElement);
 
 const App = () => {
@@ -22,16 +21,18 @@ const App = () => {
     try {
       const response = await getCryptocurrency("BTC");
 
-      // Assuming response.data matches the provided format
-      const timeSeries = response.data;
-
-      // Convert data into the format required by the candlestick chart
-      const chartData = Object.entries(timeSeries).map(([date, values]) => ({
+      // Extract the required data
+      const rawData = Object.values(response.data)[1];
+  
+      console.log("Raw Data:", rawData); // Debugging
+  
+      // Map the raw data into the format required for Chart.js
+      const chartData = Object.entries(rawData).map(([date, values]) => ({
         x: new Date(date), // Date for the x-axis
-        o: parseFloat(values.open),  // Open price
-        h: parseFloat(values.high),  // High price
-        l: parseFloat(values.low),   // Low price
-        c: parseFloat(values.close), // Close price
+        o: parseFloat(values["1. open"]),  // Open price
+        h: parseFloat(values["2. high"]),  // High price
+        l: parseFloat(values["3. low"]),   // Low price
+        c: parseFloat(values["4. close"]), // Close price
       }));
 
       setCryptoData(chartData);
@@ -74,6 +75,13 @@ const App = () => {
       },
       y: {
         beginAtZero: false,
+      },
+    },
+    elements: {
+      bar: {
+        barThickness: 15, // Fixed thickness of candlesticks
+        categoryPercentage: 0.9, // Adjust spacing between candlesticks
+        barPercentage: 0.8, // Adjust candle width relative to its category
       },
     },
   };
