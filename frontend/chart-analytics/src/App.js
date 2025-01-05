@@ -21,14 +21,10 @@ const App = () => {
     try {
       const response = await getCryptocurrency("BTC");
 
-      // Extract the required data
       const rawData = Object.values(response.data)[1];
   
-      console.log("Raw Data:", rawData); // Debugging
-  
-      // Map the raw data into the format required for Chart.js
       const chartData = Object.entries(rawData).map(([date, values]) => ({
-        x: new Date(date), // Date for the x-axis
+        x: new Date(date).valueOf(), // Date for the x-axis
         o: parseFloat(values["1. open"]),  // Open price
         h: parseFloat(values["2. high"]),  // High price
         l: parseFloat(values["3. low"]),   // Low price
